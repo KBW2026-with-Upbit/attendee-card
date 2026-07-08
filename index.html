@@ -131,7 +131,6 @@ function hasTransparency(img){try{const c=document.createElement('canvas');const
   for(let i=3;i<d.length;i+=4){if(d[i]<245)clear++;}
   return clear>d.length/4*0.02;}catch(e){return false;}}
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-function photoRect(c){const z=c.zone,[iL,iT]=c.inset;return{x:z.x+iL,y:z.y+iT,w:z.w-iL,h:z.h-iT};}
 
 function analyzeBorder(d,W,H){
   let lum=0,sat=0,n=0,rs=[],gs=[],bs=[];const idx=(x,y)=>(y*W+x)*4;
@@ -259,10 +258,6 @@ file.addEventListener('change',e=>loadFile(e.target.files[0]));
 ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
 drop.addEventListener('drop',e=>{if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
-function autoDetect(img){const c=document.createElement('canvas');const s=Math.min(1,180/Math.max(img.naturalWidth,img.naturalHeight));
-  c.width=Math.max(1,Math.round(img.naturalWidth*s));c.height=Math.max(1,Math.round(img.naturalHeight*s));
-  const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0,c.width,c.height);
-  const a=analyzeBorder(g.getImageData(0,0,c.width,c.height).data,c.width,c.height);return a.light||a.uniform;}
 function loadFile(f){if(!f)return;const r=new FileReader();
   r.onload=()=>{const im=new Image();im.onload=()=>{
     state.photo=im;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;
