@@ -81,8 +81,13 @@
       <div class="adjust" id="adjust">
         <label class="chk"><input type="checkbox" id="rmbg"> Remove background &amp; crop to subject</label>
         <div class="hd"><span>Frame the photo</span><button class="reset" id="reset">Reset</button></div>
+        <label class="fld" style="margin:2px 0 6px">Zoom</label>
         <input type="range" id="zoom" min="40" max="320" value="100">
-        <p class="tip">Drag the photo in the preview to reposition · slide to zoom.</p>
+        <label class="fld" style="margin:12px 0 6px">Move left / right</label>
+        <input type="range" id="posx" min="-600" max="600" value="0">
+        <label class="fld" style="margin:12px 0 6px">Move up / down</label>
+        <input type="range" id="posy" min="-600" max="600" value="0">
+        <p class="tip">Use the sliders to zoom and position your photo. (You can also drag it in the preview.)</p>
       </div>
       <div class="row2">
         <div><label class="fld">First name</label><input id="fn" type="text" placeholder="First"></div>
@@ -251,18 +256,24 @@ function autoDetect(img){const c=document.createElement('canvas');const s=Math.m
   const a=analyzeBorder(g.getImageData(0,0,c.width,c.height).data,c.width,c.height);return a.light||a.uniform;}
 function loadFile(f){if(!f)return;const r=new FileReader();
   r.onload=()=>{const im=new Image();im.onload=()=>{
-    state.photo=im;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;
+    state.photo=im;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;
     state.removeBg=rmbg.checked;refreshPhoto().then(render);
     drop.classList.add('has');adjust.classList.add('show');
     document.getElementById('dropTitle').textContent='Photo added';
     document.getElementById('dropSub').textContent='Click to replace';render();};
     im.src=r.result;};r.readAsDataURL(f);}
-rmbg.addEventListener('change',e=>{state.removeBg=e.target.checked;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;refreshPhoto().then(render);render();});
+rmbg.addEventListener('change',e=>{state.removeBg=e.target.checked;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;refreshPhoto().then(render);render();});
 document.getElementById('zoom').addEventListener('input',e=>{state.scale=e.target.value/100;render();});
-document.getElementById('reset').addEventListener('click',()=>{state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;render();});
+document.getElementById('posx').addEventListener('input',e=>{state.px=+e.target.value;render();});
+document.getElementById('posy').addEventListener('input',e=>{state.py=+e.target.value;render();});
+document.getElementById('reset').addEventListener('click',()=>{state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;render();});
 let drag=false,lx=0,ly=0;const factor=()=>cv.width/cv.getBoundingClientRect().width;
 cv.addEventListener('pointerdown',e=>{if(!state.gray)return;drag=true;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId);cv.classList.add('grabbing');});
-cv.addEventListener('pointermove',e=>{if(!drag)return;const f=factor();state.px+=(e.clientX-lx)*f;state.py+=(e.clientY-ly)*f;lx=e.clientX;ly=e.clientY;render();});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const f=factor();
+  state.px=Math.max(-600,Math.min(600,state.px+(e.clientX-lx)*f));
+  state.py=Math.max(-600,Math.min(600,state.py+(e.clientY-ly)*f));
+  lx=e.clientX;ly=e.clientY;
+  document.getElementById('posx').value=state.px;document.getElementById('posy').value=state.py;render();});
 cv.addEventListener('pointerup',()=>{drag=false;cv.classList.remove('grabbing');});
 cv.addEventListener('pointercancel',()=>{drag=false;cv.classList.remove('grabbing');});
 for(const id of ['fn','ln','tr','co'])document.getElementById(id).addEventListener('input',e=>{state[id]=e.target.value;render();});
