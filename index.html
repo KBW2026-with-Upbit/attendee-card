@@ -14,7 +14,8 @@
   body{background:radial-gradient(1100px 600px at 82% -8%,#10203f 0%,transparent 55%),radial-gradient(900px 500px at -5% 108%,#241033 0%,transparent 55%),var(--dark);
     color:var(--white);font-family:var(--font);-webkit-font-smoothing:antialiased;min-height:100vh;padding:32px 24px 56px;}
   .wrap{max-width:1080px;margin:0 auto}
-  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft-blue);display:inline-flex;align-items:center;gap:10px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft-blue);display:inline-flex;align-items:center;gap:10px;white-space:nowrap}
+  @media(max-width:480px){.eyebrow{font-size:10.5px;letter-spacing:.06em;gap:7px}}
   .eyebrow::before{content:"";width:22px;height:22px;background:var(--yellow);clip-path:polygon(26% 0,100% 0,74% 100%,0 100%);display:inline-block}
   h1{font-size:34px;line-height:1.05;font-weight:700;margin:14px 0 8px;letter-spacing:-.01em}h1 span{color:var(--blue)}
   .sub{color:var(--muted);margin:0 0 28px;font-size:15px;max-width:52ch}
@@ -88,7 +89,7 @@
         <div><label class="fld">Last name</label><input id="ln" type="text" placeholder="Last"></div>
       </div>
       <div><label class="fld">Title / role</label><input id="tr" type="text" placeholder="Head of Growth"></div>
-      <div><label class="fld">Company</label><input id="co" type="text" placeholder="Acme Labs"></div>
+      <div><label class="fld">Company</label><input id="co" type="text" placeholder="KBW2026"></div>
       <div><label class="fld">Preview format</label>
         <div class="seg" id="seg">
           <button data-f="1x1" class="on">Feed · 1:1</button>
