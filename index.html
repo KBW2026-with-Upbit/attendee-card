@@ -237,7 +237,8 @@ function download(fmt){const c=CFG[fmt],oc=document.createElement('canvas');oc.w
   const nm=((state.ln||state.fn||'kbw2026').replace(/\s+/g,'_')),fname=`KBW2026_attendee_card_${fmt}_${nm}.png`;
   oc.toBlob(async b=>{if(!b)return;
     const file=new File([b],fname,{type:'image/png'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
+    const touch=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){
       try{await navigator.share({files:[file],title:'KBW2026 Attendee Card'});return;}
       catch(e){if(e&&e.name==='AbortError')return;}
     }
