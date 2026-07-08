@@ -121,7 +121,13 @@ const CFG={
 const DARK='#0A1019',WHITE='#F4FBFD',BLUE='#1865FF',YELLOW='#FFFF98';
 const ZVB={w:464,h:402},ZPATH=new Path2D("M144.797 0C147.098 2.45069e-05 148.964 1.86582 148.964 4.16699V181.219C148.964 185.481 154.606 186.994 156.738 183.303L261.467 2.08203C262.211 0.793704 263.587 0 265.075 0H426.588C429.796 0.000319011 431.8 3.47431 430.195 6.25195L329.648 180.238C328.043 183.016 330.047 186.489 333.256 186.489H459.777C462.079 186.489 463.944 188.355 463.944 190.656V397.239C463.944 399.54 462.079 401.406 459.777 401.406H319.147C316.846 401.406 314.98 399.54 314.98 397.239V221.155C314.98 216.893 309.339 215.381 307.206 219.071L203.037 399.324C202.293 400.612 200.918 401.405 199.43 401.405H37.917C34.7087 401.405 32.7043 397.932 34.3096 395.154L134.856 221.168C136.461 218.391 134.457 214.917 131.248 214.917H4.16699C1.86581 214.917 0 213.051 0 210.75V4.16699C2.06667e-06 1.86581 1.86581 0 4.16699 0H144.797Z");
 const bg={}; for(const k in TPL){const im=new Image();im.onload=render;im.src=TPL[k];bg[k]=im;}
-const state={photo:null,gray:null,fn:'',ln:'',tr:'',co:'',fmt:'1x1',scale:1,px:0,py:0,removeBg:false};
+const state={photo:null,gray:null,fn:'',ln:'',tr:'',co:'',fmt:'1x1',scale:1,px:0,py:0,removeBg:false,hasAlpha:false};
+function hasTransparency(img){try{const c=document.createElement('canvas');const s=Math.min(1,120/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+  c.width=Math.max(1,Math.round((img.naturalWidth||img.width)*s));c.height=Math.max(1,Math.round((img.naturalHeight||img.height)*s));
+  const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0,c.width,c.height);
+  const d=g.getImageData(0,0,c.width,c.height).data;let clear=0;
+  for(let i=3;i<d.length;i+=4){if(d[i]<245)clear++;}
+  return clear>d.length/4*0.02;}catch(e){return false;}}
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
 function photoRect(c){const z=c.zone,[iL,iT]=c.inset;return{x:z.x+iL,y:z.y+iT,w:z.w-iL,h:z.h-iT};}
 
@@ -215,12 +221,12 @@ function draw(g,fmt){
   const zs=Math.min(F.w/ZVB.w,(F.h*0.82)/ZVB.h),zw=ZVB.w*zs,zh=ZVB.h*zs,ztx=F.x+(F.w-zw)/2,zty=F.y+F.h-zh-F.h*0.02;
   g.save();g.translate(ztx,zty);g.scale(zs,zs);g.fillStyle=YELLOW;g.fill(ZPATH);g.restore();
   const R={w:zw*0.90,y:F.y+F.h*0.03};R.h=(zty+zh)-R.y;R.x=ztx+zw-R.w;
-  if(state.gray){const src=state.gray;
-    const s0=(state.removeBg?Math.min(R.w/src.width,R.h/src.height)*0.90:Math.max(R.w/src.width,R.h/src.height))*state.scale;
+  if(state.gray){const src=state.gray;const cut=state.removeBg||state.hasAlpha;
+    const s0=(cut?Math.min(R.w/src.width,R.h/src.height)*0.90:Math.max(R.w/src.width,R.h/src.height))*state.scale;
     const nw=src.width*s0,nh=src.height*s0,dx=R.x+(R.w-nw)/2+state.px;
-    const dy=(state.removeBg?R.y+(R.h-nh)/2:R.y)+state.py;
+    const dy=(cut?R.y+(R.h-nh)/2:R.y)+state.py;
     g.save();g.beginPath();g.rect(R.x,R.y,R.w,R.h);g.clip();
-    if(state.removeBg){g.shadowColor='rgba(10,16,25,.4)';g.shadowBlur=Math.round(R.w*0.04);g.shadowOffsetY=Math.round(R.w*0.022);}
+    if(cut){g.shadowColor='rgba(10,16,25,.4)';g.shadowBlur=Math.round(R.w*0.04);g.shadowOffsetY=Math.round(R.w*0.022);}
     g.drawImage(src,dx,dy,nw,nh);g.restore();
   }else{g.fillStyle='#0A1019cc';g.textAlign='center';g.textBaseline='middle';
     g.font=`600 ${Math.round(R.w*0.05)}px 'Space Grotesk',Helvetica,Arial,sans-serif`;g.fillText('YOUR PHOTO',R.x+R.w/2,R.y+R.h/2);g.textAlign='left';}
@@ -258,6 +264,7 @@ function autoDetect(img){const c=document.createElement('canvas');const s=Math.m
 function loadFile(f){if(!f)return;const r=new FileReader();
   r.onload=()=>{const im=new Image();im.onload=()=>{
     state.photo=im;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;
+    state.hasAlpha=hasTransparency(im);
     state.removeBg=rmbg.checked;refreshPhoto().then(render);
     drop.classList.add('has');adjust.classList.add('show');
     document.getElementById('dropTitle').textContent='Photo added';
