@@ -228,8 +228,16 @@ function draw(g,fmt){
 function render(){const c=CFG[state.fmt];cv.width=c.w;cv.height=c.h;draw(ctx,state.fmt);
   document.getElementById('plabel').textContent=(state.fmt==='1x1'?'Feed · 1:1 · 1200×1200':'Story · 9:16 · 900×1600');}
 function download(fmt){const c=CFG[fmt],oc=document.createElement('canvas');oc.width=c.w;oc.height=c.h;draw(oc.getContext('2d'),fmt);
-  oc.toBlob(b=>{const a=document.createElement('a');const nm=((state.ln||state.fn||'kbw2026').replace(/\s+/g,'_'));
-    a.download=`KBW2026_see_you_in_seoul_${fmt}_${nm}.png`;a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);},'image/png');}
+  const nm=((state.ln||state.fn||'kbw2026').replace(/\s+/g,'_')),fname=`KBW2026_attendee_card_${fmt}_${nm}.png`;
+  oc.toBlob(async b=>{if(!b)return;
+    const file=new File([b],fname,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'KBW2026 Attendee Card'});return;}
+      catch(e){if(e&&e.name==='AbortError')return;}
+    }
+    const a=document.createElement('a');a.download=fname;a.href=URL.createObjectURL(b);a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  },'image/png');}
 
 const file=document.getElementById('file'),drop=document.getElementById('drop'),adjust=document.getElementById('adjust'),rmbg=document.getElementById('rmbg');
 file.addEventListener('change',e=>loadFile(e.target.files[0]));
