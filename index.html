@@ -32,7 +32,8 @@
   .card:hover .thumb img{transform:scale(1.04)}
   .body{padding:20px 22px 22px}
   .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft-blue);margin:0 0 8px}
-  .card h2{font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em}
+  .card h2{font-size:32px;font-weight:700;margin:0 0 18px;letter-spacing:-.02em;line-height:1.05}
+  @media(max-width:560px){.card h2{font-size:26px}}
   .card p{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 16px}
   .open{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--white)}
   .open .arr{color:var(--blue);transition:transform .18s ease}
@@ -50,7 +51,6 @@
       <div class="thumb"><img src="_thumb_badge.png" alt="Attendee Badge preview"></div>
       <div class="body">
         <h2>Attendee Badge</h2>
-        <p>Your KBW2026 lanyard-style ID badge — photo pops out of the frame, with your name, interests and QR.</p>
         <span class="open">Open<span class="arr">→</span></span>
       </div>
     </a>
@@ -58,7 +58,6 @@
       <div class="thumb"><img src="_thumb_see.png" alt="See you at KBW2026 card preview"></div>
       <div class="body">
         <h2>See you at KBW2026</h2>
-        <p>A "See you at KBW2026" announcement card — your photo over the KBW frame, with hashtags and Seoul visuals.</p>
         <span class="open">Open<span class="arr">→</span></span>
       </div>
     </a>
