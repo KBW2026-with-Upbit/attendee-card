@@ -55,6 +55,9 @@
   .btn{border:0;border-radius:11px;padding:13px;font-family:var(--font);font-weight:700;font-size:14px;cursor:pointer;transition:.15s}
   .btn.primary{background:var(--yellow);color:#0A1019}.btn.primary:hover{filter:brightness(1.06)}
   .btn.ghost{background:transparent;color:var(--white);border:1px solid var(--line)}.btn.ghost:hover{border-color:var(--blue)}
+  .btn.primary.off{background:#242b35;color:#5f7085;cursor:not-allowed}.btn.primary.off:hover{filter:none}
+  input[type=text].miss{border-color:#ff5a5f}.drop.miss{border-color:#ff5a5f;background:#1a1013}
+  #reqHint{display:none;color:#ff8a8d;font-size:12.5px;line-height:1.5;margin:8px 0 0;text-align:center}
   .note{color:#6b7d96;font-size:12px;line-height:1.6;margin:6px 0 0}
   .preview{position:sticky;top:24px}
   .stage{background:#0a0f18;border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;justify-content:center;position:relative}
@@ -107,6 +110,7 @@
         <button class="btn primary" id="dl1">Download</button>
         <button class="btn ghost" id="shareX">𝕏&nbsp;&nbsp;Share on X</button>
       </div>
+      <p id="reqHint"></p>
     </section>
     <section class="preview">
       <div class="seg" id="seg" style="max-width:340px;margin:0 auto 14px"><button data-f="1x1" class="on">Feed · 1:1</button><button data-f="9x16">Story · 9:16</button></div>
@@ -223,6 +227,29 @@ function download(fmt){const c=CFG[fmt],oc=document.createElement('canvas');oc.w
     if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'See you at KBW2026'});return;}catch(e){if(e&&e.name==='AbortError')return;}}
     const a=document.createElement('a');a.download=fname;a.href=URL.createObjectURL(b);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);},'image/png');}
 
+// required-field validation (photo, name, title, company)
+let triedDownload=false;
+function missing(){const m=[];
+  if(!state.photo)m.push('photo');
+  if(!((state.fn||'').trim()||(state.ln||'').trim()))m.push('name');
+  if(!(state.tr||'').trim())m.push('title');
+  if(!(state.co||'').trim())m.push('company');
+  return m;}
+function updateValidity(){
+  const m=missing(),dl=document.getElementById('dl1'),hint=document.getElementById('reqHint');
+  dl.classList.toggle('off',m.length>0);
+  const nm={photo:'photo',name:'name',title:'title/role',company:'company'};
+  if(m.length){hint.textContent='Add your '+m.map(x=>nm[x]).join(', ')+' to download.';hint.style.display='block';}
+  else hint.style.display='none';
+  if(triedDownload){
+    document.getElementById('drop').classList.toggle('miss',m.indexOf('photo')>=0);
+    const nmiss=m.indexOf('name')>=0;
+    document.getElementById('fn').classList.toggle('miss',nmiss);
+    document.getElementById('ln').classList.toggle('miss',nmiss);
+    document.getElementById('tr').classList.toggle('miss',m.indexOf('title')>=0);
+    document.getElementById('co').classList.toggle('miss',m.indexOf('company')>=0);
+  }
+}
 const file=document.getElementById('file'),drop=document.getElementById('drop'),adjust=document.getElementById('adjust'),rmbg=document.getElementById('rmbg');
 file.addEventListener('change',e=>loadFile(e.target.files[0]));
 ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
@@ -231,7 +258,7 @@ drop.addEventListener('drop',e=>{if(e.dataTransfer.files[0])loadFile(e.dataTrans
 function loadFile(f){if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
   state.photo=im;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;
   state.hasAlpha=hasTransparency(im);state.removeBg=rmbg.checked;refreshPhoto().then(render);
-  drop.classList.add('has');adjust.classList.add('show');document.getElementById('dropTitle').textContent='Photo added';document.getElementById('dropSub').textContent='Click to replace';render();};im.src=r.result;};r.readAsDataURL(f);}
+  drop.classList.add('has');adjust.classList.add('show');document.getElementById('dropTitle').textContent='Photo added';document.getElementById('dropSub').textContent='Click to replace';render();updateValidity();};im.src=r.result;};r.readAsDataURL(f);}
 rmbg.addEventListener('change',e=>{state.removeBg=e.target.checked;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;refreshPhoto().then(render);render();});
 document.getElementById('zoom').addEventListener('input',e=>{state.scale=e.target.value/100;render();});
 document.getElementById('posx').addEventListener('input',e=>{state.px=+e.target.value;render();});
@@ -242,13 +269,20 @@ cv.addEventListener('pointerdown',e=>{if(!state.gray)return;drag=true;lx=e.clien
 cv.addEventListener('pointermove',e=>{if(!drag)return;const f=factor();state.px=Math.max(-700,Math.min(700,state.px+(e.clientX-lx)*f));state.py=Math.max(-700,Math.min(700,state.py+(e.clientY-ly)*f));lx=e.clientX;ly=e.clientY;document.getElementById('posx').value=state.px;document.getElementById('posy').value=state.py;render();});
 cv.addEventListener('pointerup',()=>{drag=false;cv.classList.remove('grabbing');});
 cv.addEventListener('pointercancel',()=>{drag=false;cv.classList.remove('grabbing');});
-for(const id of ['fn','ln','tr','co'])document.getElementById(id).addEventListener('input',e=>{state[id]=e.target.value;render();});
+for(const id of ['fn','ln','tr','co'])document.getElementById(id).addEventListener('input',e=>{state[id]=e.target.value;render();updateValidity();});
 for(let i=0;i<3;i++)document.getElementById('t'+i).addEventListener('input',e=>{state.tags[i]=e.target.value;render();});
 document.getElementById('seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...e.currentTarget.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');state.fmt=b.dataset.f;render();});
-document.getElementById('dl1').addEventListener('click',()=>download(state.fmt));
+document.getElementById('dl1').addEventListener('click',()=>{
+  const m=missing();
+  if(m.length){triedDownload=true;updateValidity();
+    const first=m[0];
+    if(first==='photo')document.getElementById('drop').scrollIntoView({behavior:'smooth',block:'center'});
+    else document.getElementById(first==='name'?'fn':first==='title'?'tr':'co').focus();
+    return;}
+  download(state.fmt);});
 document.getElementById('shareX').addEventListener('click',()=>{const text="See you at KBW2026 with Upbit. 🇰🇷 Sep 29–Oct 1\n\n@kbwofficial #KBW2026 #SeeYouInSeoul #KoreaBlockchainWeek";window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener');});
 if(document.fonts&&document.fonts.ready){document.fonts.ready.then(render);}
-window.addEventListener('load',()=>setTimeout(render,120));render();
+window.addEventListener('load',()=>setTimeout(render,120));render();updateValidity();
 </script>
 </body>
 </html>
