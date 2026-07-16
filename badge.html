@@ -24,7 +24,7 @@
   .app{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:28px;align-items:start}
   @media(max-width:860px){
     .app{grid-template-columns:1fr;gap:16px}
-    .preview{order:-1;padding:0 0 8px}
+    .preview{order:-1;padding:0 0 8px;position:static}
     .preview .plabel{margin:2px 0 8px}
     .stage{padding:12px}
     #cv{max-height:62vh;width:auto}
@@ -66,7 +66,7 @@
   #reqHint{display:none;color:#ff8a8d;font-size:12.5px;line-height:1.5;margin:8px 0 0;text-align:center}
   .note{color:#6b7d96;font-size:12px;line-height:1.6;margin:6px 0 0}
   .sec{border-top:1px solid var(--line);padding-top:16px;margin-top:2px}
-  .preview{position:sticky;top:24px}
+  @media(min-width:861px){.preview{position:sticky;top:24px}}
   .stage{background:#0a0f18;border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;justify-content:center;position:relative}
   .busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:10px;background:rgba(10,16,25,.62);color:var(--white);font-family:var(--font);font-weight:600;font-size:14px;border-radius:16px;z-index:2}
   .busy.show{display:flex}

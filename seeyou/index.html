@@ -22,7 +22,7 @@
   .lead{font-size:16px;line-height:1.5;font-weight:400;color:#c3d1e2;margin:10px 0 4px;max-width:60ch}
   .sub{color:var(--muted);margin:0 0 28px;font-size:15px;max-width:56ch}
   .app{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:28px;align-items:start}
-  @media(max-width:860px){.app{grid-template-columns:1fr;gap:16px}.preview{order:-1;padding:0 0 8px}.stage{padding:12px}#cv{max-height:62vh;width:auto}}
+  @media(max-width:860px){.app{grid-template-columns:1fr;gap:16px}.preview{order:-1;padding:0 0 8px;position:static}.stage{padding:12px}#cv{max-height:62vh;width:auto}}
   .controls{display:flex;flex-direction:column;gap:16px}
   label.fld{display:block;font-size:12px;letter-spacing:.04em;color:var(--muted);margin:0 0 6px;text-transform:uppercase;font-family:var(--mono)}
   input[type=text]{width:100%;background:#0c141f;border:1px solid var(--line);color:var(--white);border-radius:10px;padding:12px 13px;font-family:var(--font);font-size:15px;outline:none;transition:border-color .15s}
@@ -59,7 +59,7 @@
   input[type=text].miss{border-color:#ff5a5f}.drop.miss{border-color:#ff5a5f;background:#1a1013}
   #reqHint{display:none;color:#ff8a8d;font-size:12.5px;line-height:1.5;margin:8px 0 0;text-align:center}
   .note{color:#6b7d96;font-size:12px;line-height:1.6;margin:6px 0 0}
-  .preview{position:sticky;top:24px}
+  @media(min-width:861px){.preview{position:sticky;top:24px}}
   .stage{background:#0a0f18;border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;justify-content:center;position:relative}
   .busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:10px;background:rgba(10,16,25,.62);color:var(--white);font-weight:600;font-size:14px;border-radius:16px;z-index:2}
   .busy.show{display:flex}
