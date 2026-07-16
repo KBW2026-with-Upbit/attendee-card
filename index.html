@@ -19,7 +19,9 @@
   h1{overflow-wrap:break-word}
   .eyebrow{font-family:var(--font);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--soft-blue);display:inline-flex;align-items:center;gap:10px;white-space:nowrap}
   .eyebrow::before{content:"";width:22px;height:22px;background:var(--yellow);clip-path:polygon(26% 0,100% 0,74% 100%,0 100%);display:inline-block}
-  h1{font-size:44px;line-height:1.03;font-weight:700;margin:16px 0 10px;letter-spacing:-.02em}h1 span{color:var(--blue)}
+  .logo{height:40px;width:auto;display:block;margin:0 0 20px}
+  @media(max-width:560px){.logo{height:32px}}
+  h1{font-size:44px;line-height:1.03;font-weight:700;margin:0 0 34px;letter-spacing:-.02em}h1 span{color:var(--blue)}
   @media(max-width:560px){h1{font-size:32px}}
   .sub{color:var(--muted);margin:0 0 40px;font-size:16px;max-width:760px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
@@ -44,9 +46,8 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">Sep 29–Oct 1 · Walkerhill</div>
+  <img class="logo" src="_logo.png" alt="KBW2026 with UPbit">
   <h1>KBW2026 <span>Attendee</span> Toolkit</h1>
-  <p class="sub">Create your personalized KBW2026 card!<br>Pick your favorite style, add your photo and details, then download and share it.</p>
   <div class="grid">
     <a class="card" href="./badge/">
       <div class="thumb"><img src="_thumb_badge.png" alt="Attendee Badge preview"></div>
@@ -63,7 +64,6 @@
       </div>
     </a>
   </div>
-  <p class="note">* Everything runs locally in your browser. Your data is never uploaded.</p>
 </div>
 </body>
 </html>
