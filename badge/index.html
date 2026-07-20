@@ -200,14 +200,20 @@ function draw(g,fmt){
   const c=CFG[fmt];g.clearRect(0,0,c.w,c.h);
   // 1) template
   if(tpl[fmt]&&tpl[fmt].complete)g.drawImage(tpl[fmt],0,0,c.w,c.h);
-  // 2) photo — fill the box in full colour (cover-fit + clip); template shows the placeholder when empty
+  // 2) photo — a blurred, zoomed copy fills the box as a backdrop, the full photo sits sharp on top
   if(state.photo){
     const P={x:c.photo[0],y:c.photo[1],w:c.photo[2]-c.photo[0],h:c.photo[3]-c.photo[1]};
     const src=state.photo,iw=src.naturalWidth||src.width,ih=src.naturalHeight||src.height;
-    const s0=Math.max(P.w/iw,P.h/ih)*state.scale,nw=iw*s0,nh=ih*s0;
-    const dx=P.x+(P.w-nw)/2+state.px,dy=P.y+(P.h-nh)/2+state.py;
     g.save();g.beginPath();g.rect(P.x,P.y,P.w,P.h);g.clip();
-    g.drawImage(src,dx,dy,nw,nh);g.restore();
+    // blurred expanded backdrop (cover-fit, slightly overscanned)
+    const bs=Math.max(P.w/iw,P.h/ih)*1.18,bw=iw*bs,bh=ih*bs;
+    g.filter=`blur(${Math.max(6,Math.round(P.w*0.06))}px)`;
+    g.drawImage(src,P.x+(P.w-bw)/2,P.y+(P.h-bh)/2,bw,bh);
+    g.filter='none';
+    // sharp photo: contain-fit so the whole image shows, plus zoom/drag
+    const fs=Math.min(P.w/iw,P.h/ih)*state.scale,fw=iw*fs,fh=ih*fs;
+    g.drawImage(src,P.x+(P.w-fw)/2+state.px,P.y+(P.h-fh)/2+state.py,fw,fh);
+    g.restore();
   }
   // 3) name + company/title
   g.fillStyle=CARDBG;g.fillRect(...c.cover);
