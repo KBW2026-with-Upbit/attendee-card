@@ -161,7 +161,7 @@ function draw(g,fmt){
   if(tpl[fmt]&&tpl[fmt].complete)g.drawImage(tpl[fmt],0,0,c.w,c.h);
   // photo — blurred zoomed backdrop + the full photo on top, gap-facing edges feathered into the backdrop
   if(state.photo){
-    const P={x:c.photo[0],y:c.photo[1],w:c.photo[2]-c.photo[0],h:c.photo[3]-c.photo[1]};
+    const P={x:c.photo[0]-2,y:c.photo[1]-2,w:c.photo[2]-c.photo[0]+4,h:c.photo[3]-c.photo[1]+4};
     const src=state.photo,iw=src.naturalWidth||src.width,ih=src.naturalHeight||src.height;
     g.save();g.beginPath();g.rect(P.x,P.y,P.w,P.h);g.clip();
     const bs=Math.max(P.w/iw,P.h/ih)*1.18,bw=iw*bs,bh=ih*bs;
