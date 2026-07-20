@@ -180,6 +180,12 @@ function draw(g,fmt){
     og.globalCompositeOperation='source-over';
     g.drawImage(oc,0,0);
     g.restore();
+  }else{
+    // empty state — "Your Photo" on the blue box
+    const P={x:c.photo[0],y:c.photo[1],w:c.photo[2]-c.photo[0],h:c.photo[3]-c.photo[1]};
+    g.fillStyle='rgba(255,255,255,.92)';g.textAlign='center';g.textBaseline='middle';g.font=`500 ${Math.round(P.w*0.058)}px ${FONT}`;
+    g.fillText('Your Photo',P.x+P.w/2,P.y+P.h/2);
+    g.textAlign='left';g.textBaseline='alphabetic';
   }
   // name / title / company
   g.fillStyle=CARDBG;g.fillRect(...c.nameCover);

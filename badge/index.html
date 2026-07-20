@@ -223,6 +223,13 @@ function draw(g,fmt){
     og.globalCompositeOperation='source-over';
     g.drawImage(oc,0,0);
     g.restore();
+  }else{
+    // empty state — clean light-blue box (covers the baked "(Photo Placeholder)") + "Your Photo"
+    const P={x:c.photo[0],y:c.photo[1],w:c.photo[2]-c.photo[0],h:c.photo[3]-c.photo[1]};
+    g.fillStyle='#AEE9FF';g.fillRect(P.x,P.y,P.w,P.h);
+    g.fillStyle='#7FA1B5';g.textAlign='center';g.textBaseline='middle';g.font=`500 ${Math.round(P.w*0.058)}px ${FONT}`;
+    g.fillText('Your Photo',P.x+P.w/2,P.y+P.h/2);
+    g.textAlign='left';g.textBaseline='alphabetic';
   }
   // 3) name + company/title
   g.fillStyle=CARDBG;g.fillRect(...c.cover);
