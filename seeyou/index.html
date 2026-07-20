@@ -88,11 +88,10 @@
     <section class="controls">
       <label class="drop" id="drop">
         <span class="ic"></span><b id="dropTitle">Add your photo</b>
-        <small id="dropSub">Click or drop an image.<br>For best results, use a headshot with a clear background.</small>
+        <small id="dropSub">Click or drop an image.<br>It fills the frame — zoom &amp; drag to position.</small>
         <input id="file" type="file" accept="image/*" class="vh">
       </label>
       <div class="adjust" id="adjust">
-        <label class="chk"><input type="checkbox" id="rmbg" checked> Pop out of the frame <span style="color:#6b7d96">(cuts out background)</span></label>
         <div class="hd"><span>Frame the photo</span><button class="reset" id="reset">Reset</button></div>
         <label class="fld" style="margin:2px 0 6px">Zoom</label>
         <input type="range" id="zoom" min="40" max="320" value="100">
@@ -123,21 +122,21 @@
     </section>
     <section class="preview">
       <div class="seg" id="seg" style="max-width:340px;margin:0 auto 14px"><button data-f="1x1" class="on">Feed · 1:1</button><button data-f="9x16">Story · 9:16</button></div>
-      <div class="stage"><canvas id="cv" width="1200" height="1200" class="grab"></canvas><div class="busy" id="busy"><span class="spin"></span><span id="busyTxt">Removing background…</span></div></div>
+      <div class="stage"><canvas id="cv" width="1200" height="1200" class="grab"></canvas></div>
     </section>
   </div>
 </div>
 <script>
 const CFG={
- '1x1':{w:1200,h:1200,tpl:'../_see1x1.png',mask:'../_seemask_1x1.png',
-   ph:[55,367,611,848], popClip:[55,232,556,616], photoHint:{x:333,y:600,size:34},
+ '1x1':{w:1200,h:1200,tpl:'../_see1x1.png',
+   photo:[55,367,555,848],
    name:{x:60,l1:954,l2:1026,size:58,max:545},
    title:{x:60,base:1090,size:31,max:545},
    company:{x:60,base:1135,size:31,max:545},
    nameCover:[38,896,568,258],
    tags:[[24,258,'#FF9812'],[584,470,'#1865FF'],[24,692,'#FF4D00']], tagH:70},
- '9x16':{w:900,h:1600,tpl:'../_see9x16.png',mask:'../_seemask_9x16.png',
-   ph:[52,620,515,1020], popClip:[52,500,463,520], photoHint:{x:283,y:830,size:32},
+ '9x16':{w:900,h:1600,tpl:'../_see9x16.png',
+   photo:[52,620,466,1020],
    name:{x:56,l1:1109,l2:1169,size:50,max:405},
    title:{x:56,base:1222,size:28,max:405},
    company:{x:56,base:1259,size:28,max:405},
@@ -145,47 +144,11 @@ const CFG={
    tags:[[39,519,'#FF9812'],[520,701,'#1865FF'],[34,893,'#FF4D00']], tagH:60}};
 const BLACK='#0A1019',BLUE='#1865FF',CARDBG='#F4FBFD';
 const FONT="'Neue Montreal',Helvetica,Arial,sans-serif";
-const tpl={}, mask={};
-for(const k in CFG){const t=new Image();t.onload=render;t.src=CFG[k].tpl;tpl[k]=t;const m=new Image();m.onload=render;m.src=CFG[k].mask;mask[k]=m;}
-const state={photo:null,gray:null,fn:'',ln:'',tr:'',co:'',fmt:'1x1',scale:1,px:0,py:0,removeBg:true,hasAlpha:false,tags:['RWA','STO','Stable']};
+const tpl={};
+for(const k in CFG){const t=new Image();t.onload=render;t.src=CFG[k].tpl;tpl[k]=t;}
+const state={photo:null,fn:'',ln:'',tr:'',co:'',fmt:'1x1',scale:1,px:0,py:0,tags:['RWA','STO','Stable']};
 
-function hasTransparency(img){try{const c=document.createElement('canvas');const s=Math.min(1,120/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
-  c.width=Math.max(1,Math.round((img.naturalWidth||img.width)*s));c.height=Math.max(1,Math.round((img.naturalHeight||img.height)*s));
-  const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0,c.width,c.height);
-  const d=g.getImageData(0,0,c.width,c.height).data;let clear=0;for(let i=3;i<d.length;i+=4){if(d[i]<245)clear++;}
-  return clear>d.length/4*0.02;}catch(e){return false;}}
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-function analyzeBorder(d,W,H){let lum=0,sat=0,n=0,rs=[],gs=[],bs=[];const idx=(x,y)=>(y*W+x)*4;
-  const add=(x,y)=>{const i=idx(x,y),r=d[i],g=d[i+1],b=d[i+2];lum+=0.299*r+0.587*g+0.114*b;sat+=Math.max(r,g,b)-Math.min(r,g,b);rs.push(r);gs.push(g);bs.push(b);n++;};
-  const sx=Math.max(1,W>>7),sy=Math.max(1,H>>7);for(let x=0;x<W;x+=sx){add(x,0);add(x,H-1);}for(let y=0;y<H;y+=sy){add(0,y);add(W-1,y);}
-  lum/=n;sat/=n;const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;const varc=a=>{const m=mean(a);return a.reduce((s,v)=>s+(v-m)*(v-m),0)/a.length;};
-  return{light:lum>185&&sat<58,uniform:(varc(rs)+varc(gs)+varc(bs))/3<700,br:Math.round(mean(rs)),bgc:Math.round(mean(gs)),bb:Math.round(mean(bs))};}
-function removeBgFlood(d,W,H,a){let mode=a.light?'light':(a.uniform?'uniform':'color');
-  const isBg=i=>{const r=d[i],g=d[i+1],b=d[i+2];if(mode==='light'){const L=0.299*r+0.587*g+0.114*b,S=Math.max(r,g,b)-Math.min(r,g,b);return L>165&&S<70;}return (Math.abs(r-a.br)+Math.abs(g-a.bgc)+Math.abs(b-a.bb))<100;};
-  const seen=new Uint8Array(W*H),st=[];for(let x=0;x<W;x++){st.push(x,0,x,H-1);}for(let y=0;y<H;y++){st.push(0,y,W-1,y);}
-  while(st.length){const y=st.pop(),x=st.pop();if(x<0||y<0||x>=W||y>=H)continue;const p=y*W+x;if(seen[p])continue;const i=p*4;if(!isBg(i))continue;seen[p]=1;d[i+3]=0;st.push(x+1,y,x-1,y,x,y+1,x,y-1);}}
-function bbox(d,W,H){let x1=W,y1=H,x2=-1,y2=-1;for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(d[(y*W+x)*4+3]>24){if(x<x1)x1=x;if(x>x2)x2=x;if(y<y1)y1=y;if(y>y2)y2=y;}}
-  if(x2<0)return null;const px=Math.round((x2-x1)*0.05),py=Math.round((y2-y1)*0.05);return{x1:Math.max(0,x1-px),y1:Math.max(0,y1-py),x2:Math.min(W-1,x2+px),y2:Math.min(H-1,y2+py)};}
-let _imgly=null;function getImgly(){if(!_imgly)_imgly=import('https://esm.sh/@imgly/background-removal@1.7.0').catch(e=>{_imgly=null;throw e;});return _imgly;}
-async function removeBgImgly(img,onProgress){const {removeBackground}=await getImgly();const maxD=1600;let W=img.naturalWidth||img.width,H=img.naturalHeight||img.height;
-  const sc=Math.min(1,maxD/Math.max(W,H));W=Math.round(W*sc);H=Math.round(H*sc);const tc=document.createElement('canvas');tc.width=W;tc.height=H;tc.getContext('2d').drawImage(img,0,0,W,H);
-  const srcBlob=await new Promise(r=>tc.toBlob(r,'image/png'));const outBlob=await removeBackground(srcBlob,{output:{format:'image/png'},progress:onProgress});const url=URL.createObjectURL(outBlob);
-  try{const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);return c;}finally{URL.revokeObjectURL(url);}}
-function cropAlpha(c){const W=c.width,H=c.height,g=c.getContext('2d',{willReadFrequently:true});const bb=bbox(g.getImageData(0,0,W,H).data,W,H);if(!bb)return c;
-  const cw=bb.x2-bb.x1+1,ch=bb.y2-bb.y1+1,cc=document.createElement('canvas');cc.width=cw;cc.height=ch;cc.getContext('2d').drawImage(c,bb.x1,bb.y1,cw,ch,0,0,cw,ch);return cc;}
-function floodFallback(c,g,W,H){const im=g.getImageData(0,0,W,H),a=analyzeBorder(im.data,W,H);removeBgFlood(im.data,W,H,a);g.putImageData(im,0,0);return cropAlpha(c);}
-async function process(img,onProgress){if(!state.removeBg){const maxD=1400;let W=img.naturalWidth||img.width,H=img.naturalHeight||img.height;const sc=Math.min(1,maxD/Math.max(W,H));W=Math.round(W*sc);H=Math.round(H*sc);const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(img,0,0,W,H);return c;}
-  try{return cropAlpha(await removeBgImgly(img,onProgress));}catch(e){const maxD=1400;let W=img.naturalWidth||img.width,H=img.naturalHeight||img.height;const sc=Math.min(1,maxD/Math.max(W,H));W=Math.round(W*sc);H=Math.round(H*sc);const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0,W,H);return floodFallback(c,g,W,H);}}
-function setBusy(b,txt){const el=document.getElementById('busy');if(!el)return;el.classList.toggle('show',b);if(b&&txt){const t=document.getElementById('busyTxt');if(t)t.textContent=txt;}}
-const CTX_FILTER=(()=>{try{const t=document.createElement('canvas').getContext('2d');t.filter='grayscale(1)';return t.filter==='grayscale(1)';}catch(e){return false;}})();
-function makeGray(src){const w=src.width,h=src.height,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:!CTX_FILTER});
-  if(CTX_FILTER){g.filter='grayscale(1) contrast(1.05) brightness(1.02)';g.drawImage(src,0,0);return c;}g.drawImage(src,0,0);const im=g.getImageData(0,0,w,h),d=im.data;
-  for(let i=0;i<d.length;i+=4){const y=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2],v=Math.max(0,Math.min(255,((y-128)*1.05+128)*1.02));d[i]=d[i+1]=d[i+2]=v;}g.putImageData(im,0,0);return c;}
-let _refreshSeq=0;
-async function refreshPhoto(){if(!state.photo)return;const my=++_refreshSeq;if(state.removeBg)setBusy(true,'Removing background…');
-  const onProg=(key,cur,total)=>{if(my===_refreshSeq&&total&&String(key).indexOf('fetch')===0)setBusy(true,'Downloading model (first time)… '+Math.round(cur/total*100)+'%');};
-  try{const gray=makeGray(await process(state.photo,onProg));if(my!==_refreshSeq)return;state.gray=gray;}finally{if(my===_refreshSeq)setBusy(false);}}
-
 function fitFont(g,size,text,max,weight){let s=size;g.font=`${weight} ${s}px ${FONT}`;while(g.measureText(text).width>max&&s>12){s-=1;g.font=`${weight} ${s}px ${FONT}`;}return s;}
 function roundRect(g,x,y,w,h,r){r=Math.min(r,h/2,w/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
 function drawTag(g,x,y,h,text,color){const fs=Math.round(h*0.44),padX=Math.round(h*0.34);
@@ -196,24 +159,27 @@ function drawTag(g,x,y,h,text,color){const fs=Math.round(h*0.44),padX=Math.round
 function draw(g,fmt){
   const c=CFG[fmt];g.clearRect(0,0,c.w,c.h);
   if(tpl[fmt]&&tpl[fmt].complete)g.drawImage(tpl[fmt],0,0,c.w,c.h);
-  const R={x:c.ph[0],y:c.ph[1],w:c.ph[2]-c.ph[0],h:c.ph[3]-c.ph[1]};
-  if(state.gray&&mask[fmt]&&mask[fmt].complete){
-    const src=state.gray,cut=state.removeBg||state.hasAlpha;
-    if(cut){
-      // subject stays IN FRONT of the Z; only the bottom is cut straight at the frame's base line
-      const s0=(R.h/src.height)*1.12*state.scale,nw=src.width*s0,nh=src.height*s0;
-      const dx=R.x+(R.w-nw)/2+state.px,dy=R.y+R.h-nh+state.py;
-      g.save();g.beginPath();g.rect(c.popClip[0],c.popClip[1],c.popClip[2],c.popClip[3]);g.clip();
-      g.shadowColor='rgba(10,16,25,.30)';g.shadowBlur=Math.round(R.w*0.03);g.shadowOffsetY=Math.round(R.w*0.018);
-      g.drawImage(src,dx,dy,nw,nh);g.restore();
-    }else{
-      const s0=Math.max(R.w/src.width,R.h/src.height)*state.scale,nw=src.width*s0,nh=src.height*s0;
-      const dx=R.x+(R.w-nw)/2+state.px,dy=R.y+state.py;
-      const oc=document.createElement('canvas');oc.width=c.w;oc.height=c.h;const og=oc.getContext('2d');
-      og.drawImage(src,dx,dy,nw,nh);og.globalCompositeOperation='destination-in';og.drawImage(mask[fmt],0,0,c.w,c.h);g.drawImage(oc,0,0);
-    }
-  }else{
-    const p=c.photoHint;g.fillStyle='rgba(244,251,253,.85)';g.textAlign='center';g.textBaseline='middle';g.font=`500 ${p.size}px ${FONT}`;g.fillText('Your Photo',p.x,p.y);g.textAlign='left';g.textBaseline='alphabetic';
+  // photo — blurred zoomed backdrop + the full photo on top, gap-facing edges feathered into the backdrop
+  if(state.photo){
+    const P={x:c.photo[0],y:c.photo[1],w:c.photo[2]-c.photo[0],h:c.photo[3]-c.photo[1]};
+    const src=state.photo,iw=src.naturalWidth||src.width,ih=src.naturalHeight||src.height;
+    g.save();g.beginPath();g.rect(P.x,P.y,P.w,P.h);g.clip();
+    const bs=Math.max(P.w/iw,P.h/ih)*1.18,bw=iw*bs,bh=ih*bs;
+    g.filter=`blur(${Math.max(6,Math.round(P.w*0.06))}px)`;
+    g.drawImage(src,P.x+(P.w-bw)/2,P.y+(P.h-bh)/2,bw,bh);
+    g.filter='none';
+    const fs=Math.min(P.w/iw,P.h/ih)*state.scale,fw=iw*fs,fh=ih*fs;
+    const dx=P.x+(P.w-fw)/2+state.px,dy=P.y+(P.h-fh)/2+state.py;
+    const oc=document.createElement('canvas');oc.width=c.w;oc.height=c.h;const og=oc.getContext('2d');
+    og.drawImage(src,dx,dy,fw,fh);
+    const ft=Math.max(8,Math.round(Math.min(P.w,P.h)*0.09));
+    og.globalCompositeOperation='destination-out';
+    const fade=(x0,y0,x1,y1,rx,ry,rw,rh)=>{const gr=og.createLinearGradient(x0,y0,x1,y1);gr.addColorStop(0,'#000');gr.addColorStop(1,'rgba(0,0,0,0)');og.fillStyle=gr;og.fillRect(rx,ry,rw,rh);};
+    if(fw<P.w-1){ fade(dx,0,dx+ft,0, dx,dy,ft,fh); fade(dx+fw,0,dx+fw-ft,0, dx+fw-ft,dy,ft,fh); }
+    if(fh<P.h-1){ fade(0,dy,0,dy+ft, dx,dy,fw,ft); fade(0,dy+fh,0,dy+fh-ft, dx,dy+fh-ft,fw,ft); }
+    og.globalCompositeOperation='source-over';
+    g.drawImage(oc,0,0);
+    g.restore();
   }
   // name / title / company
   g.fillStyle=CARDBG;g.fillRect(...c.nameCover);
@@ -259,22 +225,20 @@ function updateValidity(){
     document.getElementById('co').classList.toggle('miss',m.indexOf('company')>=0);
   }
 }
-const file=document.getElementById('file'),drop=document.getElementById('drop'),adjust=document.getElementById('adjust'),rmbg=document.getElementById('rmbg');
+const file=document.getElementById('file'),drop=document.getElementById('drop'),adjust=document.getElementById('adjust');
 file.addEventListener('change',e=>loadFile(e.target.files[0]));
 ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
 drop.addEventListener('drop',e=>{if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
 function loadFile(f){if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
   state.photo=im;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;
-  state.hasAlpha=hasTransparency(im);state.removeBg=rmbg.checked;refreshPhoto().then(render);
   drop.classList.add('has');adjust.classList.add('show');document.getElementById('dropTitle').textContent='Photo added';document.getElementById('dropSub').textContent='Click to replace';render();updateValidity();};im.src=r.result;};r.readAsDataURL(f);}
-rmbg.addEventListener('change',e=>{state.removeBg=e.target.checked;state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;refreshPhoto().then(render);render();});
 document.getElementById('zoom').addEventListener('input',e=>{state.scale=e.target.value/100;render();});
 document.getElementById('posx').addEventListener('input',e=>{state.px=+e.target.value;render();});
 document.getElementById('posy').addEventListener('input',e=>{state.py=+e.target.value;render();});
 document.getElementById('reset').addEventListener('click',()=>{state.scale=1;state.px=0;state.py=0;document.getElementById('zoom').value=100;document.getElementById('posx').value=0;document.getElementById('posy').value=0;render();});
 let drag=false,lx=0,ly=0;const factor=()=>cv.width/cv.getBoundingClientRect().width;
-cv.addEventListener('pointerdown',e=>{if(!state.gray)return;drag=true;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId);cv.classList.add('grabbing');});
+cv.addEventListener('pointerdown',e=>{if(!state.photo)return;drag=true;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId);cv.classList.add('grabbing');});
 cv.addEventListener('pointermove',e=>{if(!drag)return;const f=factor();state.px=Math.max(-700,Math.min(700,state.px+(e.clientX-lx)*f));state.py=Math.max(-700,Math.min(700,state.py+(e.clientY-ly)*f));lx=e.clientX;ly=e.clientY;document.getElementById('posx').value=state.px;document.getElementById('posy').value=state.py;render();});
 cv.addEventListener('pointerup',()=>{drag=false;cv.classList.remove('grabbing');});
 cv.addEventListener('pointercancel',()=>{drag=false;cv.classList.remove('grabbing');});

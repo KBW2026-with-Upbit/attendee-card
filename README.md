@@ -29,7 +29,6 @@ see.html, classic.html← redirect → ./seeyou/      (stubs, do not edit)
 # Shared assets (referenced from pages via ../ inside /badge/ and /seeyou/):
 _tpl_1x1.png, _tpl_9x16.png        ← Badge background templates (1200², 900×1600)
 _see1x1.png, _see9x16.png          ← See-you background templates (1200², 900×1600)
-_seemask_1x1.png, _seemask_9x16.png← See-you photo-frame (Z) masks
 _qr_default.svg                    ← Default Telegram/KBW QR (with center logo)
 _thumb_badge.png, _thumb_see.png   ← Landing card previews (actual default renders)
 _logo.png                          ← "with Upbit KBW2026" logo, recoloured for dark bg
@@ -45,11 +44,10 @@ Each is self-contained (embedded Neue Montreal fonts + inline CSS/JS); there is 
 Each card is a **template-overlay composite** drawn to a `<canvas>`:
 
 1. Draw the pre-designed background **template PNG** (frame, stickers, headings, Seoul photos…).
-2. Composite the user's photo: the image is **cover-fit and clipped to the photo box** (a
-   rectangle in the template) in full colour — no background removal. Zoom/drag reposition it.
-   When empty, the template's own placeholder shows. (The See-you maker still uses the
-   `@imgly/background-removal` pop-out flow for now — see below — until its square-box template
-   lands, after which it will match the badge.)
+2. Composite the user's photo into the template's **square photo box**, in full colour: a
+   blurred, over-scanned copy fills the box as a backdrop, the whole image sits sharp on top, and
+   the gap-facing edges are feathered so it blends into the backdrop (no hard seam). Zoom/drag
+   reposition the sharp layer. No background removal — nothing is uploaded or fetched.
 3. Cover the template's placeholder text areas and **re-draw** the user's name / title / company
    (and interest/hashtag chips) at fixed coordinates.
 4. Export via `canvas.toBlob()` → PNG download at native size (1200²/900×1600).
@@ -81,8 +79,8 @@ file to the repo root, and set the custom domain in Pages settings.
 
 ## Notes / known trade-offs
 
+- **Fully self-contained** — no external runtime calls at all (fonts are embedded; the only
+  outbound link is the optional "Share on X" intent the user clicks). Nothing is uploaded.
 - **Fonts** (Neue Montreal, ~74 KB base64) are embedded per page rather than served as a shared
   cached file — simplest for a no-build static site; swap to a linked `woff2` if page weight matters.
-- **`esm.sh` dependency** is the only external runtime call (background-removal model). Everything
-  else is same-origin. Consider self-hosting the library if you need to remove third-party calls.
 - Social platforms cache link previews; use X/Facebook card debuggers to force-refresh `og:image`.
