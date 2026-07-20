@@ -27,8 +27,7 @@ see.html, classic.html← redirect → ./seeyou/      (stubs, do not edit)
 .nojekyll             ← REQUIRED: lets GitHub Pages serve underscore-prefixed asset files
 
 # Shared assets (referenced from pages via ../ inside /badge/ and /seeyou/):
-_tpl_1x1.png, _tpl_9x16.png        ← Badge background templates (2400², 1800×3200)
-_mask_1x1.png, _mask_9x16.png      ← Badge photo-frame (Z) alpha masks
+_tpl_1x1.png, _tpl_9x16.png        ← Badge background templates (1200², 900×1600)
 _see1x1.png, _see9x16.png          ← See-you background templates (1200², 900×1600)
 _seemask_1x1.png, _seemask_9x16.png← See-you photo-frame (Z) masks
 _qr_default.svg                    ← Default Telegram/KBW QR (with center logo)
@@ -46,16 +45,14 @@ Each is self-contained (embedded Neue Montreal fonts + inline CSS/JS); there is 
 Each card is a **template-overlay composite** drawn to a `<canvas>`:
 
 1. Draw the pre-designed background **template PNG** (frame, stickers, headings, Seoul photos…).
-2. Composite the user's photo:
-   - Optional **background removal** via `@imgly/background-removal` (dynamically imported from
-     `esm.sh`; the ~40 MB model is fetched to the browser on first use). If it fails/offline, a
-     built-in flood-fill fallback runs. The photo itself is never uploaded.
-   - The cut-out subject "pops" above the frame's top edge; left/right/bottom are clipped to the
-     blue **Z frame** (`_mask_*.png` for badge; a rect to the frame's base for See-you).
+2. Composite the user's photo: the image is **cover-fit and clipped to the photo box** (a
+   rectangle in the template) in full colour — no background removal. Zoom/drag reposition it.
+   When empty, the template's own placeholder shows. (The See-you maker still uses the
+   `@imgly/background-removal` pop-out flow for now — see below — until its square-box template
+   lands, after which it will match the badge.)
 3. Cover the template's placeholder text areas and **re-draw** the user's name / title / company
    (and interest/hashtag chips) at fixed coordinates.
-4. Export via `canvas.toBlob()` → PNG download (badge downscales the 2400² canvas to 1200²;
-   See-you renders natively at 1200²/900×1600).
+4. Export via `canvas.toBlob()` → PNG download at native size (1200²/900×1600).
 
 All layout numbers (frame box, text baselines, chip anchors, colours) live in the `CFG` object
 near the top of each maker's `<script>`. **If a template PNG is re-exported at a different size or
